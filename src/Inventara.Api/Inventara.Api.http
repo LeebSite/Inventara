@@ -1,0 +1,6 @@
+@Inventara.Api_HostAddress = http://localhost:5090
+
+GET {{Inventara.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
