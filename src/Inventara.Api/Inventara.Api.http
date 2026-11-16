@@ -1,6 +1,170 @@
-@Inventara.Api_HostAddress = http://localhost:5090
+@baseUrl = http://localhost:5090
+@token = {{login.response.body.$.data.accessToken}}
+@userId = {{registerUser.response.body.$.data.id}}
+@categoryId = {{createCategory.response.body.$.data.id}}
+@locationId = {{createLocation.response.body.$.data.id}}
+@vendorId = {{createVendor.response.body.$.data.id}}
 
-GET {{Inventara.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Login with local admin credentials supplied by the REST Client environment
+# @name login
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
 
-###
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### Register a user (Admin only)
+# @name registerUser
+POST {{baseUrl}}/api/v1/auth/register
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Example User",
+  "email": "example.user@example.test",
+  "password": "{{newUserPassword}}",
+  "department": "Operations",
+  "phone": "0000000000",
+  "role": "User"
+}
+
+### Get the current user's profile
+GET {{baseUrl}}/api/v1/auth/me
+Authorization: Bearer {{token}}
+
+### List users
+GET {{baseUrl}}/api/v1/users?search=&page=1&pageSize=10&sortBy=fullName&sortDir=asc
+Authorization: Bearer {{token}}
+
+### Get a user by ID
+GET {{baseUrl}}/api/v1/users/{{userId}}
+Authorization: Bearer {{token}}
+
+### Update a user
+PUT {{baseUrl}}/api/v1/users/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Example User",
+  "email": "example.user@example.test",
+  "department": "Operations",
+  "phone": "0000000000",
+  "role": "User",
+  "isActive": true
+}
+
+### Soft-delete a user
+DELETE {{baseUrl}}/api/v1/users/{{userId}}
+Authorization: Bearer {{token}}
+
+### List categories
+GET {{baseUrl}}/api/v1/categories?search=&page=1&pageSize=10&sortBy=name&sortDir=asc
+Authorization: Bearer {{token}}
+
+### Create a category (Admin or Staff)
+# @name createCategory
+POST {{baseUrl}}/api/v1/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Example Category",
+  "description": "Example description"
+}
+
+### Get a category by ID
+GET {{baseUrl}}/api/v1/categories/{{categoryId}}
+Authorization: Bearer {{token}}
+
+### Update a category (Admin only)
+PUT {{baseUrl}}/api/v1/categories/{{categoryId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Example Category",
+  "description": "Updated description"
+}
+
+### Soft-delete a category (Admin only)
+DELETE {{baseUrl}}/api/v1/categories/{{categoryId}}
+Authorization: Bearer {{token}}
+
+### List locations
+GET {{baseUrl}}/api/v1/locations?search=&page=1&pageSize=10&sortBy=name&sortDir=asc
+Authorization: Bearer {{token}}
+
+### Create a location (Admin or Staff)
+# @name createLocation
+POST {{baseUrl}}/api/v1/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Example Location",
+  "building": "Head Office",
+  "floor": "1",
+  "description": "Example description"
+}
+
+### Get a location by ID
+GET {{baseUrl}}/api/v1/locations/{{locationId}}
+Authorization: Bearer {{token}}
+
+### Update a location (Admin only)
+PUT {{baseUrl}}/api/v1/locations/{{locationId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Example Location",
+  "building": "Head Office",
+  "floor": "2",
+  "description": "Updated description"
+}
+
+### Soft-delete a location (Admin only)
+DELETE {{baseUrl}}/api/v1/locations/{{locationId}}
+Authorization: Bearer {{token}}
+
+### List vendors
+GET {{baseUrl}}/api/v1/vendors?search=&page=1&pageSize=10&sortBy=name&sortDir=asc
+Authorization: Bearer {{token}}
+
+### Create a vendor (Admin or Staff)
+# @name createVendor
+POST {{baseUrl}}/api/v1/vendors
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Example Vendor",
+  "contactPerson": "Example Contact",
+  "email": "contact@example.test",
+  "phone": "0000000000",
+  "address": "Example address"
+}
+
+### Get a vendor by ID
+GET {{baseUrl}}/api/v1/vendors/{{vendorId}}
+Authorization: Bearer {{token}}
+
+### Update a vendor (Admin only)
+PUT {{baseUrl}}/api/v1/vendors/{{vendorId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Example Vendor",
+  "contactPerson": "Example Contact",
+  "email": "contact@example.test",
+  "phone": "0000000000",
+  "address": "Updated address"
+}
+
+### Soft-delete a vendor (Admin only)
+DELETE {{baseUrl}}/api/v1/vendors/{{vendorId}}
+Authorization: Bearer {{token}}
