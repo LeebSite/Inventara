@@ -11,12 +11,31 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using NSwag;
 using NSwag.Generation.Processors.Security;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((_, loggerConfiguration) =>
+    loggerConfiguration
+        .MinimumLevel.Information()
+        .Enrich.FromLogContext()
+        .WriteTo.Console(
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+        .WriteTo.File(
+            "logs/inventara-.log",
+            rollingInterval: RollingInterval.Day,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 var jwtSettings = JwtSettings.FromConfiguration(builder.Configuration);
+
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy =>
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()));
 
 builder.Services
     .AddControllers()
@@ -99,9 +118,12 @@ builder.Services.AddOpenApiDocument(options =>
 
 var app = builder.Build();
 
+app.UseSerilogRequestLogging(options =>
+    options.MessageTemplate = "{RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms");
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
