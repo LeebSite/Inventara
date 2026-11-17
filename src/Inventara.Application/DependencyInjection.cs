@@ -1,5 +1,6 @@
 using FluentValidation;
 using Inventara.Application.Auth;
+using Inventara.Application.Assets;
 using Inventara.Application.Categories;
 using Inventara.Application.Locations;
 using Inventara.Application.Users;
@@ -14,6 +15,7 @@ public static class DependencyInjection
     {
         services.AddValidatorsFromAssemblyContaining<IAuthService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAssetService, AssetService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ILocationService, LocationService>();
