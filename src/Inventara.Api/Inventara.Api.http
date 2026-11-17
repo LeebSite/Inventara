@@ -4,6 +4,7 @@
 @categoryId = {{createCategory.response.body.$.data.id}}
 @locationId = {{createLocation.response.body.$.data.id}}
 @vendorId = {{createVendor.response.body.$.data.id}}
+@assetId = {{createAsset.response.body.$.data.id}}
 
 ### Login with local admin credentials supplied by the REST Client environment
 # @name login
@@ -167,4 +168,69 @@ Content-Type: application/json
 
 ### Soft-delete a vendor (Admin only)
 DELETE {{baseUrl}}/api/v1/vendors/{{vendorId}}
+Authorization: Bearer {{token}}
+
+### List assets with search, filters, sorting, and pagination
+GET {{baseUrl}}/api/v1/assets?search=laptop&status=Available&categoryId={{categoryId}}&locationId={{locationId}}&page=1&pageSize=10&sortBy=assetCode&sortDir=asc
+Authorization: Bearer {{token}}
+
+### Create an asset (Admin or Staff; asset code is generated)
+# @name createAsset
+POST {{baseUrl}}/api/v1/assets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Example Laptop",
+  "categoryId": "{{categoryId}}",
+  "locationId": "{{locationId}}",
+  "vendorId": "{{vendorId}}",
+  "serialNumber": "EXAMPLE-SERIAL-001",
+  "purchaseDate": "2026-01-15T00:00:00Z",
+  "purchasePrice": 1500.00,
+  "condition": "Good",
+  "status": "Available",
+  "notes": "Example asset"
+}
+
+### Get asset details and most recent loan
+GET {{baseUrl}}/api/v1/assets/{{assetId}}
+Authorization: Bearer {{token}}
+
+### Update an asset (Admin or Staff)
+PUT {{baseUrl}}/api/v1/assets/{{assetId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Example Laptop Updated",
+  "categoryId": "{{categoryId}}",
+  "locationId": "{{locationId}}",
+  "vendorId": "{{vendorId}}",
+  "serialNumber": "EXAMPLE-SERIAL-001",
+  "purchaseDate": "2026-01-15T00:00:00Z",
+  "purchasePrice": 1450.00,
+  "condition": "MinorDamage",
+  "status": "Available",
+  "notes": "Updated example asset"
+}
+
+### Upload an asset photo (JPG/PNG, max 2 MB; replace the sample image path)
+POST {{baseUrl}}/api/v1/assets/{{assetId}}/photo
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=AssetPhotoBoundary
+
+--AssetPhotoBoundary
+Content-Disposition: form-data; name="file"; filename="asset-photo.jpg"
+Content-Type: image/jpeg
+
+< ./asset-photo.jpg
+--AssetPhotoBoundary--
+
+### Export filtered assets to Excel (Admin or Staff)
+GET {{baseUrl}}/api/v1/assets/export?status=Available&categoryId={{categoryId}}&locationId={{locationId}}
+Authorization: Bearer {{token}}
+
+### Soft-delete an asset (Admin only)
+DELETE {{baseUrl}}/api/v1/assets/{{assetId}}
 Authorization: Bearer {{token}}
