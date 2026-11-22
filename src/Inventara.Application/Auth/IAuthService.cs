@@ -6,7 +6,10 @@ public interface IAuthService
 {
     Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken);
 
-    Task<UserProfileResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken);
+    Task<UserProfileResponse> RegisterAsync(
+        Guid actorId,
+        RegisterRequest request,
+        CancellationToken cancellationToken);
 
     Task<UserProfileResponse> GetProfileAsync(Guid userId, CancellationToken cancellationToken);
 }

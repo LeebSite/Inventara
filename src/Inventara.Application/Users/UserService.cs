@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FluentValidation;
+using Inventara.Application.AuditLogs;
 using Inventara.Application.Common;
 using Inventara.Application.Common.Exceptions;
 using Inventara.Application.Persistence;
@@ -12,7 +13,8 @@ public sealed class UserService(
     IUserRepository users,
     IPasswordHasher passwordHasher,
     IValidator<ListQuery> listQueryValidator,
-    IValidator<UpdateUserRequest> updateValidator) : IUserService
+    IValidator<UpdateUserRequest> updateValidator,
+    IAuditLogService auditLogs) : IUserService
 {
     public async Task<PagedResponse<UserResponse>> GetPageAsync(
         ListQuery query,
@@ -59,6 +61,7 @@ public sealed class UserService(
 
     public async Task<UserResponse> UpdateAsync(
         Guid id,
+        Guid actorId,
         UpdateUserRequest request,
         CancellationToken cancellationToken)
     {
@@ -69,6 +72,7 @@ public sealed class UserService(
         {
             throw new EntityNotFoundException("User not found.");
         }
+        var oldValues = ToAuditValues(user, passwordChanged: false);
 
         var email = request.Email.Trim().ToLowerInvariant();
         if (await users.EmailExistsAsync(email, user.Id, cancellationToken))
@@ -82,17 +86,27 @@ public sealed class UserService(
         user.Department = request.Department.Trim();
         user.Phone = request.Phone.Trim();
         user.IsActive = request.IsActive;
+        var passwordChanged = false;
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
             user.PasswordHash = passwordHasher.Hash(request.Password);
+            passwordChanged = true;
         }
 
         users.Update(user);
+        await auditLogs.AddAsync(
+            actorId,
+            "User",
+            user.Id,
+            "Update",
+            oldValues,
+            ToAuditValues(user, passwordChanged),
+            cancellationToken);
         await users.SaveChangesAsync(cancellationToken);
         return ToResponse(user);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Guid id, Guid actorId, CancellationToken cancellationToken)
     {
         var user = await users.GetByIdAsync(id, cancellationToken);
         if (user is null)
@@ -100,8 +114,17 @@ public sealed class UserService(
             throw new EntityNotFoundException("User not found.");
         }
 
+        var oldValues = ToAuditValues(user, passwordChanged: false);
         user.IsDeleted = true;
         users.Update(user);
+        await auditLogs.AddAsync(
+            actorId,
+            "User",
+            user.Id,
+            "Delete",
+            oldValues,
+            ToAuditValues(user, passwordChanged: false),
+            cancellationToken);
         await users.SaveChangesAsync(cancellationToken);
     }
 
@@ -115,4 +138,15 @@ public sealed class UserService(
             user.Phone,
             user.IsActive,
             ServiceHelpers.ToUtcOffset(user.CreatedAt));
+
+    private static UserAuditValues ToAuditValues(User user, bool passwordChanged) =>
+        new(
+            user.FullName,
+            user.Email,
+            user.Role.ToString(),
+            user.Department,
+            user.Phone,
+            user.IsActive,
+            user.IsDeleted,
+            passwordChanged);
 }

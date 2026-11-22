@@ -11,18 +11,21 @@ public interface IAssetService
     Task<AssetDetailResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
     Task<AssetResponse> CreateAsync(
+        Guid actorId,
         CreateAssetRequest request,
         CancellationToken cancellationToken);
 
     Task<AssetResponse> UpdateAsync(
         Guid id,
+        Guid actorId,
         UpdateAssetRequest request,
         CancellationToken cancellationToken);
 
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+    Task DeleteAsync(Guid id, Guid actorId, CancellationToken cancellationToken);
 
     Task<AssetResponse> UploadPhotoAsync(
         Guid id,
+        Guid actorId,
         UploadAssetPhotoRequest request,
         CancellationToken cancellationToken);
 

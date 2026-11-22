@@ -1,4 +1,3 @@
-using System.Data;
 using Inventara.Application.Common;
 using Inventara.Application.Common.Exceptions;
 using Inventara.Application.Persistence;
@@ -109,10 +108,6 @@ public sealed class AssetRepository : EntityRepository<Asset>, IAssetRepository
         string codePrefix,
         CancellationToken cancellationToken)
     {
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable,
-            cancellationToken);
-
         var existingCodes = await _dbContext.Assets
             .IgnoreQueryFilters()
             .Where(existingAsset => existingAsset.AssetCode.StartsWith(codePrefix + "-"))
@@ -132,8 +127,6 @@ public sealed class AssetRepository : EntityRepository<Asset>, IAssetRepository
 
         asset.AssetCode = $"{codePrefix}-{lastSequence + 1:D4}";
         await AddAsync(asset, cancellationToken);
-        await SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
     }
 
     private IQueryable<Asset> BuildAssetQuery(AssetFilter filter)

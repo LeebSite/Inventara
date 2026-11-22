@@ -8,7 +8,11 @@ public interface IUserService
 
     Task<UserResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<UserResponse> UpdateAsync(Guid id, UpdateUserRequest request, CancellationToken cancellationToken);
+    Task<UserResponse> UpdateAsync(
+        Guid id,
+        Guid actorId,
+        UpdateUserRequest request,
+        CancellationToken cancellationToken);
 
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+    Task DeleteAsync(Guid id, Guid actorId, CancellationToken cancellationToken);
 }

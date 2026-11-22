@@ -28,6 +28,8 @@ public static class DependencyInjection
         services.AddScoped(typeof(IEntityRepository<>), typeof(EntityRepository<>));
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAssetRepository, AssetRepository>();
+        services.AddScoped<ILoanRepository, LoanRepository>();
+        services.AddScoped<ITransactionManager, TransactionManager>();
         services.AddScoped<IAssetPhotoStorage>(_ =>
             new FileStorageService(Path.Combine(contentRootPath, "wwwroot")));
         services.AddSingleton<IAssetExcelExporter, ClosedXmlAssetExporter>();

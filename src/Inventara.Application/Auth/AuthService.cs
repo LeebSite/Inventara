@@ -1,4 +1,5 @@
 using FluentValidation;
+using Inventara.Application.AuditLogs;
 using Inventara.Application.Common.Exceptions;
 using Inventara.Application.Persistence;
 using Inventara.Application.Security;
@@ -13,7 +14,8 @@ public sealed class AuthService(
     IPasswordHasher passwordHasher,
     IJwtTokenIssuer tokenIssuer,
     IValidator<LoginRequest> loginValidator,
-    IValidator<RegisterRequest> registerValidator) : IAuthService
+    IValidator<RegisterRequest> registerValidator,
+    IAuditLogService auditLogs) : IAuthService
 {
     public async Task<LoginResponse> LoginAsync(
         LoginRequest request,
@@ -38,6 +40,7 @@ public sealed class AuthService(
     }
 
     public async Task<UserProfileResponse> RegisterAsync(
+        Guid actorId,
         RegisterRequest request,
         CancellationToken cancellationToken)
     {
@@ -61,6 +64,14 @@ public sealed class AuthService(
         };
 
         await users.AddAsync(user, cancellationToken);
+        await auditLogs.AddAsync(
+            actorId,
+            "User",
+            user.Id,
+            "Create",
+            null,
+            ToAuditValues(user, passwordChanged: true),
+            cancellationToken);
         await users.SaveChangesAsync(cancellationToken);
         return ToProfile(user);
     }
@@ -87,6 +98,17 @@ public sealed class AuthService(
             user.Department,
             user.Phone,
             user.IsActive);
+
+    private static UserAuditValues ToAuditValues(User user, bool passwordChanged) =>
+        new(
+            user.FullName,
+            user.Email,
+            user.Role.ToString(),
+            user.Department,
+            user.Phone,
+            user.IsActive,
+            user.IsDeleted,
+            passwordChanged);
 
     private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }

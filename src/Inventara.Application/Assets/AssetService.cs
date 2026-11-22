@@ -1,4 +1,5 @@
 using FluentValidation;
+using Inventara.Application.AuditLogs;
 using Inventara.Application.Common;
 using Inventara.Application.Common.Exceptions;
 using Inventara.Application.Persistence;
@@ -16,7 +17,9 @@ public sealed class AssetService(
     IValidator<UpdateAssetRequest> updateValidator,
     IValidator<UploadAssetPhotoRequest> photoValidator,
     IAssetPhotoStorage photoStorage,
-    IAssetExcelExporter excelExporter) : IAssetService
+    IAssetExcelExporter excelExporter,
+    IAuditLogService auditLogs,
+    ITransactionManager transactions) : IAssetService
 {
     public async Task<PagedResponse<AssetResponse>> GetPageAsync(
         AssetListQuery query,
@@ -52,43 +55,61 @@ public sealed class AssetService(
     }
 
     public async Task<AssetResponse> CreateAsync(
+        Guid actorId,
         CreateAssetRequest request,
         CancellationToken cancellationToken)
     {
         await createValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var category = await GetCategoryAsync(request.CategoryId, cancellationToken);
-        await EnsureLocationExistsAsync(request.LocationId, cancellationToken);
-        await EnsureVendorExistsAsync(request.VendorId, cancellationToken);
-
-        var asset = new Asset
+        AssetResponse? response = null;
+        await transactions.ExecuteAsync(async token =>
         {
-            Name = request.Name.Trim(),
-            CategoryId = request.CategoryId,
-            LocationId = request.LocationId,
-            VendorId = request.VendorId,
-            SerialNumber = NormalizeOptional(request.SerialNumber),
-            PurchaseDate = request.PurchaseDate.UtcDateTime,
-            PurchasePrice = request.PurchasePrice,
-            Condition = request.Condition,
-            Status = request.Status,
-            Notes = NormalizeOptional(request.Notes)
-        };
+            var category = await GetCategoryAsync(request.CategoryId, token);
+            await EnsureLocationExistsAsync(request.LocationId, token);
+            await EnsureVendorExistsAsync(request.VendorId, token);
 
-        await assets.AddWithGeneratedCodeAsync(
-            asset,
-            GetAssetCodePrefix(category.Name),
-            cancellationToken);
-        return await GetResponseAsync(asset.Id, cancellationToken);
+            var asset = new Asset
+            {
+                Name = request.Name.Trim(),
+                CategoryId = request.CategoryId,
+                LocationId = request.LocationId,
+                VendorId = request.VendorId,
+                SerialNumber = NormalizeOptional(request.SerialNumber),
+                PurchaseDate = request.PurchaseDate.UtcDateTime,
+                PurchasePrice = request.PurchasePrice,
+                Condition = request.Condition,
+                Status = request.Status,
+                Notes = NormalizeOptional(request.Notes)
+            };
+
+            await assets.AddWithGeneratedCodeAsync(
+                asset,
+                GetAssetCodePrefix(category.Name),
+                token);
+            await auditLogs.AddAsync(
+                actorId,
+                "Asset",
+                asset.Id,
+                "Create",
+                null,
+                ToAuditValues(asset),
+                token);
+            await assets.SaveChangesAsync(token);
+            response = await GetResponseAsync(asset.Id, token);
+        }, cancellationToken);
+
+        return response ?? throw new InvalidOperationException("The asset was not created.");
     }
 
     public async Task<AssetResponse> UpdateAsync(
         Guid id,
+        Guid actorId,
         UpdateAssetRequest request,
         CancellationToken cancellationToken)
     {
         await updateValidator.ValidateAndThrowAsync(request, cancellationToken);
         var asset = await assets.GetByIdAsync(id, cancellationToken)
             ?? throw new EntityNotFoundException("Asset not found.");
+        var oldValues = ToAuditValues(asset);
 
         await EnsureCategoryExistsAsync(request.CategoryId, cancellationToken);
         await EnsureLocationExistsAsync(request.LocationId, cancellationToken);
@@ -106,28 +127,47 @@ public sealed class AssetService(
         asset.Notes = NormalizeOptional(request.Notes);
 
         assets.Update(asset);
+        await auditLogs.AddAsync(
+            actorId,
+            "Asset",
+            asset.Id,
+            "Update",
+            oldValues,
+            ToAuditValues(asset),
+            cancellationToken);
         await assets.SaveChangesAsync(cancellationToken);
         return await GetResponseAsync(id, cancellationToken);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Guid id, Guid actorId, CancellationToken cancellationToken)
     {
         var asset = await assets.GetByIdAsync(id, cancellationToken)
             ?? throw new EntityNotFoundException("Asset not found.");
 
+        var oldValues = ToAuditValues(asset);
         asset.IsDeleted = true;
         assets.Update(asset);
+        await auditLogs.AddAsync(
+            actorId,
+            "Asset",
+            asset.Id,
+            "Delete",
+            oldValues,
+            ToAuditValues(asset),
+            cancellationToken);
         await assets.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<AssetResponse> UploadPhotoAsync(
         Guid id,
+        Guid actorId,
         UploadAssetPhotoRequest request,
         CancellationToken cancellationToken)
     {
         await photoValidator.ValidateAndThrowAsync(request, cancellationToken);
         var asset = await assets.GetByIdAsync(id, cancellationToken)
             ?? throw new EntityNotFoundException("Asset not found.");
+        var oldValues = ToAuditValues(asset);
         var extension = Path.GetExtension(request.FileName).ToLowerInvariant();
         asset.PhotoUrl = await photoStorage.SaveAsync(
             request.Content,
@@ -135,6 +175,14 @@ public sealed class AssetService(
             cancellationToken);
 
         assets.Update(asset);
+        await auditLogs.AddAsync(
+            actorId,
+            "Asset",
+            asset.Id,
+            "Update",
+            oldValues,
+            ToAuditValues(asset),
+            cancellationToken);
         await assets.SaveChangesAsync(cancellationToken);
         return await GetResponseAsync(id, cancellationToken);
     }
@@ -227,6 +275,22 @@ public sealed class AssetService(
 
     private static string? NormalizeOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static AssetAuditValues ToAuditValues(Asset asset) =>
+        new(
+            asset.AssetCode,
+            asset.Name,
+            asset.CategoryId,
+            asset.LocationId,
+            asset.VendorId,
+            asset.SerialNumber,
+            asset.PurchaseDate,
+            asset.PurchasePrice,
+            asset.Condition.ToString(),
+            asset.Status.ToString(),
+            asset.PhotoUrl,
+            asset.Notes,
+            asset.IsDeleted);
 
     private static AssetResponse ToResponse(AssetReadRecord record) =>
         new(
