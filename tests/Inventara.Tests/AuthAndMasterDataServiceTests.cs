@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Text.Json;
+using Inventara.Application.AuditLogs;
 using Inventara.Application.Auth;
 using Inventara.Application.Common;
 using Inventara.Application.Common.Exceptions;
@@ -58,9 +59,11 @@ public sealed class AuthAndMasterDataServiceTests
     {
         var repository = new FakeUserRepository();
         var passwordHasher = new FakePasswordHasher();
-        var service = CreateAuthService(repository, passwordHasher);
+        var auditLogs = new FakeAuditLogService();
+        var service = CreateAuthService(repository, passwordHasher, auditLogs: auditLogs);
 
         var result = await service.RegisterAsync(
+            Guid.NewGuid(),
             new RegisterRequest
             {
                 FullName = "New User",
@@ -76,6 +79,10 @@ public sealed class AuthAndMasterDataServiceTests
         Assert.Equal("new.user@example.test", storedUser.Email);
         Assert.Equal("hashed:new-password", storedUser.PasswordHash);
         Assert.Equal(storedUser.Id, result.Id);
+        var audit = Assert.Single(auditLogs.Entries);
+        Assert.Equal("Create", audit.Action);
+        Assert.DoesNotContain("PasswordHash", audit.NewValues);
+        Assert.DoesNotContain("hashed:new-password", audit.NewValues);
     }
 
     [Fact]
@@ -86,6 +93,7 @@ public sealed class AuthAndMasterDataServiceTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             service.RegisterAsync(
+                Guid.NewGuid(),
                 new RegisterRequest
                 {
                     FullName = "Duplicate",
@@ -123,10 +131,12 @@ public sealed class AuthAndMasterDataServiceTests
     {
         var user = CreateUser();
         var repository = new FakeUserRepository([user]);
-        var service = CreateUserService(repository);
+        var auditLogs = new FakeAuditLogService();
+        var service = CreateUserService(repository, auditLogs);
 
         var result = await service.UpdateAsync(
             user.Id,
+            Guid.NewGuid(),
             new UpdateUserRequest
             {
                 FullName = user.FullName,
@@ -142,6 +152,8 @@ public sealed class AuthAndMasterDataServiceTests
         Assert.Equal("hashed:replacement-password", user.PasswordHash);
         Assert.Equal(Role.Staff, result.Role);
         Assert.DoesNotContain("PasswordHash", JsonSerializer.Serialize(result));
+        var audit = Assert.Single(auditLogs.Entries);
+        Assert.DoesNotContain(user.PasswordHash, audit.NewValues);
     }
 
     [Fact]
@@ -150,7 +162,7 @@ public sealed class AuthAndMasterDataServiceTests
         var user = CreateUser();
         var service = CreateUserService(new FakeUserRepository([user]));
 
-        await service.DeleteAsync(user.Id, CancellationToken.None);
+        await service.DeleteAsync(user.Id, Guid.NewGuid(), CancellationToken.None);
 
         Assert.True(user.IsDeleted);
     }
@@ -200,20 +212,25 @@ public sealed class AuthAndMasterDataServiceTests
     private static AuthService CreateAuthService(
         FakeUserRepository repository,
         FakePasswordHasher? passwordHasher = null,
-        FakeTokenIssuer? tokenIssuer = null) =>
+        FakeTokenIssuer? tokenIssuer = null,
+        FakeAuditLogService? auditLogs = null) =>
         new(
             repository,
             passwordHasher ?? new FakePasswordHasher(),
             tokenIssuer ?? new FakeTokenIssuer(),
             new LoginRequestValidator(),
-            new RegisterRequestValidator());
+            new RegisterRequestValidator(),
+            auditLogs ?? new FakeAuditLogService());
 
-    private static UserService CreateUserService(FakeUserRepository repository) =>
+    private static UserService CreateUserService(
+        FakeUserRepository repository,
+        FakeAuditLogService? auditLogs = null) =>
         new(
             repository,
             new FakePasswordHasher(),
             new ListQueryValidator(),
-            new UpdateUserRequestValidator());
+            new UpdateUserRequestValidator(),
+            auditLogs ?? new FakeAuditLogService());
 
     private static User CreateUser(
         string fullName = "Admin User",
@@ -243,6 +260,43 @@ public sealed class AuthAndMasterDataServiceTests
 
         public bool Verify(string password, string passwordHash) =>
             passwordHash == Hash(password);
+    }
+
+    private sealed class FakeAuditLogService : IAuditLogService
+    {
+        public List<AuditLogEntry> Entries { get; } = [];
+
+        public Task AddAsync(
+            Guid? userId,
+            string entityName,
+            Guid entityId,
+            string action,
+            object? oldValues,
+            object? newValues,
+            CancellationToken cancellationToken)
+        {
+            Entries.Add(new AuditLogEntry(
+                userId,
+                entityName,
+                entityId,
+                action,
+                oldValues is null ? null : JsonSerializer.Serialize(oldValues),
+                newValues is null ? null : JsonSerializer.Serialize(newValues)));
+            return Task.CompletedTask;
+        }
+
+        public Task<PagedResponse<AuditLogResponse>> GetPageAsync(
+            AuditLogQuery query,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new PagedResponse<AuditLogResponse>([], 0, 0, query.Page, query.PageSize));
+
+        public sealed record AuditLogEntry(
+            Guid? UserId,
+            string EntityName,
+            Guid EntityId,
+            string Action,
+            string? OldValues,
+            string? NewValues);
     }
 
     private sealed class FakeUserRepository(IEnumerable<User>? users = null)

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Inventara.Application.AuditLogs;
 using Inventara.Application.Assets;
 using Inventara.Application.Common;
 using Inventara.Application.Common.Exceptions;
@@ -9,6 +10,7 @@ using Inventara.Domain.Entities;
 using Inventara.Domain.Enums;
 using Inventara.Infrastructure.Storage;
 using ClosedXML.Excel;
+using System.Text.Json;
 
 namespace Inventara.Tests;
 
@@ -21,12 +23,20 @@ public sealed class AssetServiceTests
     {
         var category = new Category { Name = "Laptop" };
         var repository = new FakeAssetRepository();
-        var service = CreateService(repository, [category]);
+        var auditLogs = new FakeAuditLogService();
+        var service = CreateService(repository, [category], auditLogs: auditLogs);
 
-        var result = await service.CreateAsync(CreateRequest(category.Id), CancellationToken.None);
+        var result = await service.CreateAsync(
+            Guid.NewGuid(),
+            CreateRequest(category.Id),
+            CancellationToken.None);
 
         Assert.Equal("INV-LAP-0001", result.AssetCode);
         Assert.Equal("INV-LAP", repository.LastCodePrefix);
+        var audit = Assert.Single(auditLogs.Entries);
+        Assert.Equal("Asset", audit.EntityName);
+        Assert.Null(audit.OldValues);
+        Assert.Contains("INV-LAP-0001", audit.NewValues);
     }
 
     [Fact]
@@ -71,7 +81,7 @@ public sealed class AssetServiceTests
         var repository = new FakeAssetRepository([asset]);
         var service = CreateService(repository);
 
-        await service.DeleteAsync(asset.Id, CancellationToken.None);
+        await service.DeleteAsync(asset.Id, Guid.NewGuid(), CancellationToken.None);
 
         Assert.True(asset.IsDeleted);
     }
@@ -82,7 +92,7 @@ public sealed class AssetServiceTests
         var service = CreateService();
 
         await Assert.ThrowsAsync<EntityNotFoundException>(() =>
-            service.CreateAsync(CreateRequest(Guid.NewGuid()), CancellationToken.None));
+            service.CreateAsync(Guid.NewGuid(), CreateRequest(Guid.NewGuid()), CancellationToken.None));
     }
 
     [Fact]
@@ -94,6 +104,7 @@ public sealed class AssetServiceTests
 
         var result = await service.UpdateAsync(
             asset.Id,
+            Guid.NewGuid(),
             CreateUpdateRequest() with { CategoryId = category.Id, Name = "Updated name" },
             CancellationToken.None);
 
@@ -107,7 +118,7 @@ public sealed class AssetServiceTests
         var service = CreateService();
 
         await Assert.ThrowsAsync<EntityNotFoundException>(() =>
-            service.UpdateAsync(Guid.NewGuid(), CreateUpdateRequest(), CancellationToken.None));
+            service.UpdateAsync(Guid.NewGuid(), Guid.NewGuid(), CreateUpdateRequest(), CancellationToken.None));
     }
 
     [Fact]
@@ -122,6 +133,7 @@ public sealed class AssetServiceTests
         await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
             service.UploadPhotoAsync(
                 asset.Id,
+                Guid.NewGuid(),
                 new UploadAssetPhotoRequest("photo.jpg", "image/jpeg", content.Length, content),
                 CancellationToken.None));
 
@@ -139,6 +151,7 @@ public sealed class AssetServiceTests
 
         var result = await service.UploadPhotoAsync(
             asset.Id,
+            Guid.NewGuid(),
             new UploadAssetPhotoRequest("photo.png", "image/png", content.Length, content),
             CancellationToken.None);
 
@@ -224,7 +237,8 @@ public sealed class AssetServiceTests
     private static AssetService CreateService(
         FakeAssetRepository? assetRepository = null,
         IEnumerable<Category>? categories = null,
-        FakePhotoStorage? photoStorage = null) =>
+        FakePhotoStorage? photoStorage = null,
+        FakeAuditLogService? auditLogs = null) =>
         new(
             assetRepository ?? new FakeAssetRepository(),
             new FakeRepository<Category>(categories),
@@ -235,7 +249,54 @@ public sealed class AssetServiceTests
             new UpdateAssetRequestValidator(),
             new UploadAssetPhotoRequestValidator(),
             photoStorage ?? new FakePhotoStorage(),
-            new FakeExcelExporter());
+            new FakeExcelExporter(),
+            auditLogs ?? new FakeAuditLogService(),
+            new FakeTransactionManager());
+
+    private sealed class FakeAuditLogService : IAuditLogService
+    {
+        public List<AuditLogEntry> Entries { get; } = [];
+
+        public Task AddAsync(
+            Guid? userId,
+            string entityName,
+            Guid entityId,
+            string action,
+            object? oldValues,
+            object? newValues,
+            CancellationToken cancellationToken)
+        {
+            Entries.Add(new AuditLogEntry(
+                userId,
+                entityName,
+                entityId,
+                action,
+                oldValues is null ? null : JsonSerializer.Serialize(oldValues),
+                newValues is null ? null : JsonSerializer.Serialize(newValues)));
+            return Task.CompletedTask;
+        }
+
+        public Task<PagedResponse<AuditLogResponse>> GetPageAsync(
+            AuditLogQuery query,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new PagedResponse<AuditLogResponse>([], 0, 0, query.Page, query.PageSize));
+
+        public sealed record AuditLogEntry(
+            Guid? UserId,
+            string EntityName,
+            Guid EntityId,
+            string Action,
+            string? OldValues,
+            string? NewValues);
+    }
+
+    private sealed class FakeTransactionManager : ITransactionManager
+    {
+        public Task ExecuteAsync(
+            Func<CancellationToken, Task> operation,
+            CancellationToken cancellationToken) =>
+            operation(cancellationToken);
+    }
 
     private sealed class FakeAssetRepository(IEnumerable<Asset>? assets = null)
         : FakeRepository<Asset>(assets), IAssetRepository
