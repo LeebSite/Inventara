@@ -34,6 +34,11 @@ public sealed class ApiExceptionHandler(
                 "Conflict",
                 conflictException.Message,
                 (IReadOnlyDictionary<string, string[]>?)null),
+            ForbiddenException forbiddenException => (
+                StatusCodes.Status403Forbidden,
+                "Forbidden",
+                forbiddenException.Message,
+                (IReadOnlyDictionary<string, string[]>?)null),
             InvalidCredentialsException => (
                 StatusCodes.Status401Unauthorized,
                 "Unauthorized",

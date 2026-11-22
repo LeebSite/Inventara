@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Inventara.Api.Models;
 using Inventara.Application.Assets;
 using Inventara.Application.Common;
@@ -59,7 +61,7 @@ public sealed class AssetsController(IAssetService assetService) : ControllerBas
         [FromBody] CreateAssetRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await assetService.CreateAsync(request, cancellationToken);
+        var result = await assetService.CreateAsync(CurrentUserId, request, cancellationToken);
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Id },
@@ -77,7 +79,7 @@ public sealed class AssetsController(IAssetService assetService) : ControllerBas
         [FromBody] UpdateAssetRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await assetService.UpdateAsync(id, request, cancellationToken);
+        var result = await assetService.UpdateAsync(id, CurrentUserId, request, cancellationToken);
         return Ok(ApiResponse<AssetResponse>.Ok(result));
     }
 
@@ -87,7 +89,7 @@ public sealed class AssetsController(IAssetService assetService) : ControllerBas
     [ProducesResponseType<ApiProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await assetService.DeleteAsync(id, cancellationToken);
+        await assetService.DeleteAsync(id, CurrentUserId, cancellationToken);
         return NoContent();
     }
 
@@ -106,6 +108,7 @@ public sealed class AssetsController(IAssetService assetService) : ControllerBas
         await using var content = file.OpenReadStream();
         var result = await assetService.UploadPhotoAsync(
             id,
+            CurrentUserId,
             new UploadAssetPhotoRequest(
                 file.FileName,
                 file.ContentType,
@@ -114,4 +117,9 @@ public sealed class AssetsController(IAssetService assetService) : ControllerBas
             cancellationToken);
         return Ok(ApiResponse<AssetResponse>.Ok(result));
     }
+
+    private Guid CurrentUserId =>
+        Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId)
+            ? userId
+            : throw new InvalidOperationException("The access token does not identify a valid user.");
 }

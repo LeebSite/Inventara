@@ -33,7 +33,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await authService.RegisterAsync(request, cancellationToken);
+        var result = await authService.RegisterAsync(CurrentUserId, request, cancellationToken);
         return CreatedAtAction(
             nameof(UsersController.GetById),
             "Users",
@@ -67,4 +67,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         var result = await authService.GetProfileAsync(userId, cancellationToken);
         return Ok(ApiResponse<UserProfileResponse>.Ok(result));
     }
+
+    private Guid CurrentUserId =>
+        Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId)
+            ? userId
+            : throw new InvalidOperationException("The access token does not identify a valid user.");
 }

@@ -5,6 +5,9 @@
 @locationId = {{createLocation.response.body.$.data.id}}
 @vendorId = {{createVendor.response.body.$.data.id}}
 @assetId = {{createAsset.response.body.$.data.id}}
+@loanId = {{createLoan.response.body.$.data.id}}
+@rejectedLoanId = {{createRejectedLoan.response.body.$.data.id}}
+@maintenanceLoanId = {{createMaintenanceLoan.response.body.$.data.id}}
 
 ### Login with local admin credentials supplied by the REST Client environment
 # @name login
@@ -231,6 +234,97 @@ Content-Type: image/jpeg
 GET {{baseUrl}}/api/v1/assets/export?status=Available&categoryId={{categoryId}}&locationId={{locationId}}
 Authorization: Bearer {{token}}
 
-### Soft-delete an asset (Admin only)
+### Request a loan (Admin, Staff, or User)
+# @name createLoan
+POST {{baseUrl}}/api/v1/loans
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assetId": "{{assetId}}",
+  "dueDate": "2027-01-15T17:00:00Z",
+  "purpose": "Project work"
+}
+
+### List the current user's loans
+GET {{baseUrl}}/api/v1/loans/my?page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### List loans (Admin/Staff; filter by status and separate date fields)
+GET {{baseUrl}}/api/v1/loans?status=Pending&requestedFrom=2026-01-01T00:00:00Z&requestedTo=2027-12-31T23:59:59Z&loanFrom=2026-01-01T00:00:00Z&loanTo=2027-12-31T23:59:59Z&dueFrom=2026-01-01T00:00:00Z&dueTo=2027-12-31T23:59:59Z&page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Get a loan the current user owns, or any loan as Admin/Staff
+GET {{baseUrl}}/api/v1/loans/{{loanId}}
+Authorization: Bearer {{token}}
+
+### Approve a pending loan (Admin only)
+POST {{baseUrl}}/api/v1/loans/{{loanId}}/approve
+Authorization: Bearer {{token}}
+
+### Return a loan in good condition (Admin/Staff)
+POST {{baseUrl}}/api/v1/loans/{{loanId}}/return
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "returnCondition": "Good"
+}
+
+### Create a second request to test rejection
+# @name createRejectedLoan
+POST {{baseUrl}}/api/v1/loans
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assetId": "{{assetId}}",
+  "dueDate": "2027-01-15T17:00:00Z",
+  "purpose": "Request to be rejected"
+}
+
+### Reject a pending loan (Admin only; required reason)
+POST {{baseUrl}}/api/v1/loans/{{rejectedLoanId}}/reject
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Asset is required for another project"
+}
+
+### Create a third request to test damaged return
+# @name createMaintenanceLoan
+POST {{baseUrl}}/api/v1/loans
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assetId": "{{assetId}}",
+  "dueDate": "2027-01-15T17:00:00Z",
+  "purpose": "Request for maintenance workflow"
+}
+
+### Approve the third loan (Admin only)
+POST {{baseUrl}}/api/v1/loans/{{maintenanceLoanId}}/approve
+Authorization: Bearer {{token}}
+
+### Return with damage (Admin/Staff; automatically creates a maintenance ticket)
+POST {{baseUrl}}/api/v1/loans/{{maintenanceLoanId}}/return
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "returnCondition": "MinorDamage"
+}
+
+### List loans overdue by current time (Admin/Staff; status is computed)
+GET {{baseUrl}}/api/v1/loans/overdue?page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Search audit logs by entity, user, and time range (Admin only)
+GET {{baseUrl}}/api/v1/audit-logs?entityName=Loan&fromDate=2026-01-01T00:00:00Z&toDate=2027-12-31T23:59:59Z&page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Soft-delete the example asset (Admin only)
 DELETE {{baseUrl}}/api/v1/assets/{{assetId}}
 Authorization: Bearer {{token}}

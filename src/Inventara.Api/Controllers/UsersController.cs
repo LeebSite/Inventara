@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Inventara.Api.Models;
 using Inventara.Application.Common;
 using Inventara.Application.Users;
@@ -42,7 +44,7 @@ public sealed class UsersController(IUserService userService) : ControllerBase
         [FromBody] UpdateUserRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await userService.UpdateAsync(id, request, cancellationToken);
+        var result = await userService.UpdateAsync(id, CurrentUserId, request, cancellationToken);
         return Ok(ApiResponse<UserResponse>.Ok(result));
     }
 
@@ -51,7 +53,12 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     [ProducesResponseType<ApiProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await userService.DeleteAsync(id, cancellationToken);
+        await userService.DeleteAsync(id, CurrentUserId, cancellationToken);
         return NoContent();
     }
+
+    private Guid CurrentUserId =>
+        Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId)
+            ? userId
+            : throw new InvalidOperationException("The access token does not identify a valid user.");
 }
