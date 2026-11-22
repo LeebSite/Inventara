@@ -49,9 +49,9 @@ public sealed class ApiExceptionHandler(
         if (statusCode == StatusCodes.Status500InternalServerError)
         {
             logger.LogError(
-                "Unhandled API exception at {Path}: {ExceptionType}",
-                httpContext.Request.Path,
-                exception.GetType().Name);
+                exception,
+                "Unhandled API exception at {Path}",
+                httpContext.Request.Path);
         }
 
         httpContext.Response.StatusCode = statusCode;
