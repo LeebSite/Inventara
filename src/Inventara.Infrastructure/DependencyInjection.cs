@@ -29,6 +29,8 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAssetRepository, AssetRepository>();
         services.AddScoped<ILoanRepository, LoanRepository>();
+        services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
+        services.AddScoped<IDashboardRepository, DashboardRepository>();
         services.AddScoped<ITransactionManager, TransactionManager>();
         services.AddScoped<IAssetPhotoStorage>(_ =>
             new FileStorageService(Path.Combine(contentRootPath, "wwwroot")));
