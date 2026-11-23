@@ -8,6 +8,7 @@
 @loanId = {{createLoan.response.body.$.data.id}}
 @rejectedLoanId = {{createRejectedLoan.response.body.$.data.id}}
 @maintenanceLoanId = {{createMaintenanceLoan.response.body.$.data.id}}
+@maintenanceId = {{createMaintenance.response.body.$.data.id}}
 
 ### Login with local admin credentials supplied by the REST Client environment
 # @name login
@@ -232,6 +233,45 @@ Content-Type: image/jpeg
 
 ### Export filtered assets to Excel (Admin or Staff)
 GET {{baseUrl}}/api/v1/assets/export?status=Available&categoryId={{categoryId}}&locationId={{locationId}}
+Authorization: Bearer {{token}}
+
+### List maintenance tickets (Admin/Staff; filter by status and asset)
+GET {{baseUrl}}/api/v1/maintenance?status=Reported&assetId={{assetId}}&page=1&pageSize=10&sortBy=reportedAt&sortDir=desc
+Authorization: Bearer {{token}}
+
+### Create a maintenance ticket (Admin/Staff; marks the asset as Maintenance)
+# @name createMaintenance
+POST {{baseUrl}}/api/v1/maintenance
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assetId": "{{assetId}}",
+  "description": "Routine inspection",
+  "vendorId": "{{vendorId}}"
+}
+
+### Update maintenance status, cost, and finish date (Admin/Staff; use complete to set Done)
+PUT {{baseUrl}}/api/v1/maintenance/{{maintenanceId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "InProgress",
+  "cost": 125.00,
+  "finishedAt": "2026-11-25T10:00:00Z"
+}
+
+### Complete a maintenance ticket (sets Done and returns the asset to Available)
+POST {{baseUrl}}/api/v1/maintenance/{{maintenanceId}}/complete
+Authorization: Bearer {{token}}
+
+### Dashboard summary (Admin/Staff)
+GET {{baseUrl}}/api/v1/dashboard/summary
+Authorization: Bearer {{token}}
+
+### Asset counts by category for dashboard chart (Admin/Staff)
+GET {{baseUrl}}/api/v1/dashboard/assets-by-category
 Authorization: Bearer {{token}}
 
 ### Request a loan (Admin, Staff, or User)
