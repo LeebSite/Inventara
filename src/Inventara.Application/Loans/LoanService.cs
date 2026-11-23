@@ -5,13 +5,14 @@ using Inventara.Application.Common.Exceptions;
 using Inventara.Application.Persistence;
 using Inventara.Domain.Entities;
 using Inventara.Domain.Enums;
+using MaintenanceEntity = Inventara.Domain.Entities.Maintenance;
 
 namespace Inventara.Application.Loans;
 
 public sealed class LoanService(
     ILoanRepository loans,
     IEntityRepository<Asset> assets,
-    IEntityRepository<Maintenance> maintenances,
+    IEntityRepository<MaintenanceEntity> maintenances,
     IAuditLogService auditLogs,
     ITransactionManager transactions,
     IValidator<CreateLoanRequest> createValidator,
@@ -194,7 +195,7 @@ public sealed class LoanService(
             if (request.ReturnCondition != AssetCondition.Good)
             {
                 await maintenances.AddAsync(
-                    new Maintenance
+                    new MaintenanceEntity
                     {
                         AssetId = asset.Id,
                         ReportedById = reporterId,
