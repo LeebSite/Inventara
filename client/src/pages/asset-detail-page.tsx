@@ -123,7 +123,7 @@ export function AssetDetailPage() {
       <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
         <div className="space-y-5">
           <Card className="overflow-hidden rounded-2xl border-slate-200/80 shadow-sm">
-            <div className="flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-slate-100 to-indigo-50/60">
+            <div className="flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-slate-100 to-teal-50/60">
               {image ? (
                 <img src={image} alt={asset.name} className="h-full w-full object-cover" />
               ) : (

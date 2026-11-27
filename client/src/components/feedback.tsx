@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 export function LoadingBlock({ label = "Memuat data..." }: { label?: string }) {
   return (
     <div className="flex min-h-48 items-center justify-center gap-3 text-sm text-slate-500">
-      <LoaderCircle className="size-5 animate-spin text-indigo-600" />
+      <LoaderCircle className="size-5 animate-spin text-teal-600" />
       {label}
     </div>
   )

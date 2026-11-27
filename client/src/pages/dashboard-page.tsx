@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Link } from "react-router-dom"
 
-const chartColors = ["#4f46e5", "#0ea5e9", "#f59e0b", "#e879f9", "#10b981", "#64748b"]
+const chartColors = ["#0D9488", "#0ea5e9", "#f59e0b", "#e879f9", "#10b981", "#64748b"]
 
 export function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
@@ -78,7 +78,7 @@ export function DashboardPage() {
       ) : summary ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard title="Total aset" value={summary.totalAssets} note="Seluruh aset terdaftar" icon={Box} iconClass="bg-indigo-50 text-indigo-600" />
+            <MetricCard title="Total aset" value={summary.totalAssets} note="Seluruh aset terdaftar" icon={Box} iconClass="bg-teal-50 text-teal-600" />
             <MetricCard title="Pinjaman aktif" value={summary.activeLoans} note={`${summary.onLoanAssets} aset sedang dipinjam`} icon={CircleCheck} iconClass="bg-sky-50 text-sky-600" />
             <MetricCard title="Sudah terlambat" value={summary.overdueLoans} note="Perlu ditindaklanjuti" icon={AlertTriangle} iconClass="bg-rose-50 text-rose-600" />
             <MetricCard title="Maintenance berjalan" value={summary.activeMaintenances} note={`${summary.maintenanceAssets} aset dalam maintenance`} icon={Wrench} iconClass="bg-orange-50 text-orange-600" />
@@ -90,7 +90,7 @@ export function DashboardPage() {
                   <CardTitle className="text-base font-semibold">Aset per kategori</CardTitle>
                   <p className="mt-1 text-sm text-slate-500">Distribusi inventaris menurut kategori.</p>
                 </div>
-                <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+                <span className="rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700">
                   {categories.length} kategori
                 </span>
               </CardHeader>
@@ -136,7 +136,7 @@ export function DashboardPage() {
                       {overdue.map((loan) => (
                         <TableRow key={loan.id}>
                           <TableCell>
-                            <Link to={`/assets/${loan.assetId}`} className="font-medium text-slate-800 hover:text-indigo-700">
+                            <Link to={`/assets/${loan.assetId}`} className="font-medium text-slate-800 hover:text-teal-700">
                               {loan.assetCode}
                             </Link>
                             <p className="mt-0.5 text-xs text-slate-400">{loan.assetName}</p>
@@ -151,7 +151,7 @@ export function DashboardPage() {
                     </TableBody>
                   </Table>
                 </div>
-                <Button asChild variant="ghost" size="sm" className="mt-3 px-2 text-indigo-700">
+                <Button asChild variant="ghost" size="sm" className="mt-3 px-2 text-teal-700">
                   <Link to="/approvals">Lihat seluruh pinjaman <ArrowUpRight className="ml-1 size-3.5" /></Link>
                 </Button>
               </CardContent>

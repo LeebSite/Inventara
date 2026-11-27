@@ -97,11 +97,11 @@ export function AuditLogsPage() {
                     {logs.map((log) => <TableRow key={log.id} className="align-top">
                       <TableCell className="whitespace-nowrap py-3.5 pl-5 text-xs text-slate-500">{formatDate(log.createdAt)}</TableCell>
                       <TableCell><p className="font-medium text-slate-800">{log.entityName}</p><p className="mt-1 max-w-[190px] truncate font-mono text-[10px] text-slate-400">{log.entityId}</p></TableCell>
-                      <TableCell><span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">{log.action}</span></TableCell>
+                      <TableCell><span className="rounded-md bg-teal-50 px-2 py-1 text-xs font-medium text-teal-700">{log.action}</span></TableCell>
                       <TableCell className="font-mono text-xs text-slate-500">{log.userId ? users.find((user) => user.id === log.userId)?.fullName ?? log.userId : "System"}</TableCell>
                       <TableCell className="min-w-[220px] pr-5">
                         <details className="group">
-                          <summary className="flex cursor-pointer items-center gap-1 text-xs font-medium text-indigo-700"><ScrollText className="size-3.5" /> Lihat nilai</summary>
+                          <summary className="flex cursor-pointer items-center gap-1 text-xs font-medium text-teal-700"><ScrollText className="size-3.5" /> Lihat nilai</summary>
                           <div className="mt-2 grid gap-2 xl:grid-cols-2">
                             <ValuePanel label="Sebelum" value={displayJson(log.oldValues)} />
                             <ValuePanel label="Sesudah" value={displayJson(log.newValues)} />

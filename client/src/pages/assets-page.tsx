@@ -132,7 +132,7 @@ export function AssetsPage() {
               </Button>
             )}
             {canEdit && (
-              <Button className="rounded-xl shadow-sm shadow-indigo-200" onClick={openCreate}>
+              <Button className="rounded-xl shadow-sm shadow-teal-200" onClick={openCreate}>
                 <Plus className="size-4" /> Tambah aset
               </Button>
             )}
@@ -185,7 +185,7 @@ export function AssetsPage() {
                     {assets.map((asset) => (
                       <TableRow key={asset.id}>
                         <TableCell className="py-3.5 pl-5">
-                          <Link to={`/assets/${asset.id}`} className="font-semibold text-slate-800 hover:text-indigo-700">{asset.assetCode}</Link>
+                          <Link to={`/assets/${asset.id}`} className="font-semibold text-slate-800 hover:text-teal-700">{asset.assetCode}</Link>
                           <p className="mt-0.5 text-xs text-slate-400">{asset.name}</p>
                         </TableCell>
                         <TableCell className="text-sm text-slate-600">{asset.categoryName}</TableCell>

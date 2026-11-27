@@ -68,7 +68,7 @@ export function MyLoansPage() {
       <Card className="mb-5 rounded-2xl border-slate-200/80 shadow-sm">
         <CardContent className="p-5">
           <div className="mb-4 flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Plus className="size-4" /></div>
+            <div className="grid size-9 place-items-center rounded-xl bg-teal-50 text-teal-600"><Plus className="size-4" /></div>
             <div><h2 className="text-sm font-semibold text-slate-800">Ajukan pinjaman</h2><p className="mt-0.5 text-xs text-slate-400">Pilih aset yang tersedia dan tanggal pengembalian.</p></div>
           </div>
           <form onSubmit={(event) => void requestLoan(event)} className="grid gap-3 md:grid-cols-[1.2fr_0.8fr_1.4fr_auto] md:items-end">
@@ -243,7 +243,7 @@ function LoanTable({
   return (
     <Card className="rounded-2xl border-slate-200/80 shadow-sm">
       <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-        <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><ClipboardCheck className="size-4" /></div>
+        <div className="grid size-9 place-items-center rounded-xl bg-teal-50 text-teal-600"><ClipboardCheck className="size-4" /></div>
         <div><h2 className="text-sm font-semibold text-slate-800">{title}</h2><p className="mt-0.5 text-xs text-slate-400">{subtitle}</p></div>
         <span className="ml-auto rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{loans.length}</span>
       </div>
