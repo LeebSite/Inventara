@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react"
-import { Activity, ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react"
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react"
 import { Navigate, useLocation, useNavigate } from "react-router-dom"
+import inventaraIcon from "@/assets/inventara-icon.svg"
+import inventaraLogo from "@/assets/inventara-logo-horizontal.svg"
 import { useAuth } from "@/auth/auth-context"
 import { roleHome } from "@/auth/protected-route"
 import { getErrorMessage } from "@/lib/api"
@@ -37,28 +39,27 @@ export function LoginPage() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-10">
-      <div className="absolute -top-36 -right-36 size-[30rem] rounded-full bg-indigo-100/70 blur-3xl" />
-      <div className="absolute -bottom-48 -left-32 size-[32rem] rounded-full bg-sky-100/50 blur-3xl" />
+      <div className="absolute -top-36 -right-36 size-[30rem] rounded-full bg-teal-100/70 blur-3xl" />
+      <div className="absolute -bottom-48 -left-32 size-[32rem] rounded-full bg-teal-50/60 blur-3xl" />
       <div className="relative grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-2xl shadow-slate-300/30 lg:grid-cols-[1fr_0.85fr]">
-        <section className="hidden flex-col justify-between bg-gradient-to-br from-indigo-700 via-indigo-700 to-violet-800 p-12 text-white lg:flex">
+        <section className="hidden flex-col justify-between bg-gradient-to-br from-slate-900 via-slate-900 to-teal-800 p-12 text-white lg:flex">
           <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-xl bg-white/15"><Activity className="size-5" /></div>
+            <div className="grid size-10 place-items-center rounded-xl bg-white"><img src={inventaraIcon} alt="" className="size-9" /></div>
             <span className="text-lg font-semibold tracking-tight">Inventara</span>
           </div>
           <div className="max-w-md">
-            <p className="text-sm font-medium text-indigo-200">ASSET MANAGEMENT WORKSPACE</p>
+            <p className="text-sm font-medium text-teal-200">ASSET MANAGEMENT WORKSPACE</p>
             <h1 className="mt-4 text-4xl leading-tight font-semibold tracking-tight">Semua aset, dalam kendali.</h1>
-            <p className="mt-4 text-sm leading-7 text-indigo-100/80">Kelola inventaris, pantau peminjaman, dan jaga setiap aset tetap siap digunakan.</p>
+            <p className="mt-4 text-sm leading-7 text-teal-100/80">Kelola inventaris, pantau peminjaman, dan jaga setiap aset tetap siap digunakan.</p>
           </div>
-          <p className="text-xs text-indigo-200/70">Ruang kerja inventaris untuk organisasi Anda.</p>
+          <p className="text-xs text-teal-200/70">Ruang kerja inventaris untuk organisasi Anda.</p>
         </section>
         <section className="flex items-center px-7 py-10 sm:px-12 lg:px-11">
           <div className="mx-auto w-full max-w-sm">
             <div className="mb-9 lg:hidden">
-              <div className="mb-5 grid size-11 place-items-center rounded-xl bg-indigo-600 text-white"><Activity className="size-5" /></div>
-              <p className="font-semibold text-slate-900">Inventara</p>
+              <img src={inventaraLogo} alt="Inventara" className="mb-5 h-11 w-auto" />
             </div>
-            <p className="text-xs font-semibold tracking-[0.16em] text-indigo-600 uppercase">Selamat datang</p>
+            <p className="text-xs font-semibold tracking-[0.16em] text-teal-600 uppercase">Selamat datang</p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Masuk ke akun</h2>
             <p className="mt-2 text-sm text-slate-500">Masukkan kredensial untuk membuka workspace Anda.</p>
             <form className="mt-8 space-y-5" onSubmit={(event) => void submit(event)}>
@@ -80,7 +81,7 @@ export function LoginPage() {
                 </div>
               </div>
               {error && <p role="alert" className="rounded-xl border border-rose-100 bg-rose-50 px-3.5 py-3 text-sm text-rose-700">{error}</p>}
-              <Button type="submit" className="h-11 w-full rounded-xl shadow-sm shadow-indigo-200" disabled={submitting}>
+              <Button type="submit" className="h-11 w-full rounded-xl shadow-sm shadow-teal-200" disabled={submitting}>
                 {submitting ? "Memverifikasi..." : "Masuk"}
                 {!submitting && <ArrowRight className="size-4" />}
               </Button>

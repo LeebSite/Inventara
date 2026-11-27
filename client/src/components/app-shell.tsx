@@ -1,6 +1,5 @@
 import { useState } from "react"
 import {
-  Activity,
   Archive,
   ChevronDown,
   ClipboardCheck,
@@ -13,6 +12,7 @@ import {
   Wrench,
 } from "lucide-react"
 import { NavLink, Outlet, useLocation } from "react-router-dom"
+import inventaraIcon from "@/assets/inventara-icon.svg"
 import { useAuth } from "@/auth/auth-context"
 import type { Role } from "@/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -54,7 +54,7 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
             className={({ isActive }) =>
               `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                 isActive
-                  ? "bg-indigo-50 text-indigo-700"
+                  ? "bg-teal-50 text-teal-700"
                   : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
               }`
             }
@@ -71,9 +71,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-[76px] items-center gap-3 px-6">
-        <div className="grid size-9 place-items-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
-          <Activity className="size-5" />
-        </div>
+        <img src={inventaraIcon} alt="" className="size-9" />
         <div>
           <p className="text-[15px] font-semibold tracking-tight text-slate-900">Inventara</p>
           <p className="text-[11px] font-medium tracking-wide text-slate-400 uppercase">Asset workspace</p>
@@ -85,9 +83,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
       <Navigation onNavigate={onNavigate} />
       <div className="mt-auto p-4">
-        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
-          <p className="text-xs font-semibold text-indigo-900">Inventara workspace</p>
-          <p className="mt-1 text-xs leading-relaxed text-indigo-700/70">
+        <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4">
+          <p className="text-xs font-semibold text-slate-900">Inventara workspace</p>
+          <p className="mt-1 text-xs leading-relaxed text-teal-700/70">
             Kelola aset dan aktivitas peminjaman dalam satu tempat.
           </p>
         </div>
@@ -138,8 +136,8 @@ export function AppShell() {
               <p className="text-sm font-semibold text-slate-800">{user?.fullName ?? "Pengguna"}</p>
               <p className="text-xs text-slate-400">{role}</p>
             </div>
-            <Avatar className="size-9 border border-indigo-100 bg-indigo-50">
-              <AvatarFallback className="bg-indigo-50 text-xs font-semibold text-indigo-700">
+            <Avatar className="size-9 border border-teal-100 bg-teal-50">
+              <AvatarFallback className="bg-teal-50 text-xs font-semibold text-teal-700">
                 {initials || "IN"}
               </AvatarFallback>
             </Avatar>
