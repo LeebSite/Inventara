@@ -29,6 +29,7 @@ public sealed class JwtTokenIssuer(JwtSettings settings) : IJwtTokenIssuer
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim("security_stamp", user.SecurityStamp.ToString()),
                 new Claim("role", user.Role.ToString()),
                 new Claim("name", user.FullName),
                 new Claim("department", user.Department),

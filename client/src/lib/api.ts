@@ -16,7 +16,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
+    if (
+      axios.isAxiosError(error)
+      && error.response?.status === 401
+      && error.config?.url !== "/auth/logout"
+    ) {
       clearStoredAuth()
       window.dispatchEvent(new Event("inventara:unauthorized"))
       if (window.location.pathname !== "/login") window.location.assign("/login")

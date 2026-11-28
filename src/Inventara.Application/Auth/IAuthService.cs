@@ -12,4 +12,6 @@ public interface IAuthService
         CancellationToken cancellationToken);
 
     Task<UserProfileResponse> GetProfileAsync(Guid userId, CancellationToken cancellationToken);
+
+    Task LogoutAsync(Guid userId, CancellationToken cancellationToken);
 }

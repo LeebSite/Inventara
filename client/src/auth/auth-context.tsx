@@ -9,7 +9,7 @@ interface AuthContextValue {
   role: Role | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<UserProfile>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -43,10 +43,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(readStoredUser)
   const role = token ? decodeRole(token) : null
 
-  const logout = useCallback(() => {
-    clearStoredAuth()
-    setToken(null)
-    setUser(null)
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/auth/logout")
+    } catch {
+      // Local logout must still complete if the token is expired or the API is unavailable.
+    } finally {
+      clearStoredAuth()
+      setToken(null)
+      setUser(null)
+    }
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {

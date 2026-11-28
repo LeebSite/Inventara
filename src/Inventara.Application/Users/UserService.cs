@@ -90,6 +90,7 @@ public sealed class UserService(
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
             user.PasswordHash = passwordHasher.Hash(request.Password);
+            user.SecurityStamp = Guid.NewGuid();
             passwordChanged = true;
         }
 

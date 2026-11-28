@@ -11,6 +11,8 @@ public class User : BaseEntity
 
     public string PasswordHash { get; set; } = string.Empty;
 
+    public Guid SecurityStamp { get; set; } = Guid.NewGuid();
+
     public Role Role { get; set; }
 
     public string Department { get; set; } = string.Empty;

@@ -89,6 +89,15 @@ public sealed class AuthService(
         return ToProfile(user);
     }
 
+    public async Task LogoutAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await users.GetByIdAsync(userId, cancellationToken)
+            ?? throw new EntityNotFoundException("User not found.");
+        user.SecurityStamp = Guid.NewGuid();
+        users.Update(user);
+        await users.SaveChangesAsync(cancellationToken);
+    }
+
     private static UserProfileResponse ToProfile(User user) =>
         new(
             user.Id,

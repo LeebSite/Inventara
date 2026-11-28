@@ -2,26 +2,43 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Inventara.Api.Models;
 using Inventara.Application.Auth;
+using Inventara.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Inventara.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
-public sealed class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(
+    IAuthService authService,
+    ILogger<AuthController> logger) : ControllerBase
 {
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     [HttpPost("login")]
     [ProducesResponseType<ApiResponse<LoginResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ApiProblemDetails>(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await authService.LoginAsync(request, cancellationToken);
-        return Ok(ApiResponse<LoginResponse>.Ok(result));
+        try
+        {
+            var result = await authService.LoginAsync(request, cancellationToken);
+            return Ok(ApiResponse<LoginResponse>.Ok(result));
+        }
+        catch (InvalidCredentialsException)
+        {
+            logger.LogWarning(
+                "Failed login attempt for {Email} from {IpAddress}",
+                request.Email,
+                HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+            throw;
+        }
     }
 
     [Authorize(Roles = "Admin")]
@@ -66,6 +83,16 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
 
         var result = await authService.GetProfileAsync(userId, cancellationToken);
         return Ok(ApiResponse<UserProfileResponse>.Ok(result));
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    [ProducesResponseType<ApiResponse<string>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<string>>> Logout(CancellationToken cancellationToken)
+    {
+        await authService.LogoutAsync(CurrentUserId, cancellationToken);
+        return Ok(ApiResponse<string>.Ok("Logged out."));
     }
 
     private Guid CurrentUserId =>

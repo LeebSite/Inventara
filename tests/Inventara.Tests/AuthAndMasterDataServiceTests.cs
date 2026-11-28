@@ -55,6 +55,18 @@ public sealed class AuthAndMasterDataServiceTests
     }
 
     [Fact]
+    public async Task LogoutAsync_RotatesSecurityStamp()
+    {
+        var user = CreateUser();
+        var originalStamp = user.SecurityStamp;
+        var service = CreateAuthService([user]);
+
+        await service.LogoutAsync(user.Id, CancellationToken.None);
+
+        Assert.NotEqual(originalStamp, user.SecurityStamp);
+    }
+
+    [Fact]
     public async Task RegisterAsync_NewEmail_HashesPasswordAndDefaultsRole()
     {
         var repository = new FakeUserRepository();
@@ -130,6 +142,7 @@ public sealed class AuthAndMasterDataServiceTests
     public async Task UserService_UpdateWithPassword_HashesPasswordAndReturnsSafeResponse()
     {
         var user = CreateUser();
+        var originalStamp = user.SecurityStamp;
         var repository = new FakeUserRepository([user]);
         var auditLogs = new FakeAuditLogService();
         var service = CreateUserService(repository, auditLogs);
@@ -150,6 +163,7 @@ public sealed class AuthAndMasterDataServiceTests
             CancellationToken.None);
 
         Assert.Equal("hashed:replacement-password", user.PasswordHash);
+        Assert.NotEqual(originalStamp, user.SecurityStamp);
         Assert.Equal(Role.Staff, result.Role);
         Assert.DoesNotContain("PasswordHash", JsonSerializer.Serialize(result));
         var audit = Assert.Single(auditLogs.Entries);
@@ -196,6 +210,7 @@ public sealed class AuthAndMasterDataServiceTests
 
         Assert.Equal(user.Id.ToString(), token.Subject);
         Assert.Equal(user.Email, token.Claims.Single(claim => claim.Type == "email").Value);
+        Assert.Equal(user.SecurityStamp.ToString(), token.Claims.Single(claim => claim.Type == "security_stamp").Value);
         Assert.Equal(user.Role.ToString(), token.Claims.Single(claim => claim.Type == "role").Value);
         Assert.Equal(user.FullName, token.Claims.Single(claim => claim.Type == "name").Value);
         Assert.Equal(TimeSpan.FromHours(8), token.ValidTo - token.ValidFrom);
