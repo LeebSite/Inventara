@@ -15,6 +15,13 @@ public sealed class MaintenanceRepository : EntityRepository<Maintenance>, IMain
         _dbContext = dbContext;
     }
 
+    public Task<bool> HasActiveTicketAsync(Guid assetId, CancellationToken cancellationToken) =>
+        _dbContext.Maintenances.AnyAsync(
+            maintenance => maintenance.AssetId == assetId
+                && (maintenance.Status == Domain.Enums.MaintenanceStatus.Reported
+                    || maintenance.Status == Domain.Enums.MaintenanceStatus.InProgress),
+            cancellationToken);
+
     public async Task<PagedResult<MaintenanceReadRecord>> GetPageAsync(
         MaintenanceFilter filter,
         int page,

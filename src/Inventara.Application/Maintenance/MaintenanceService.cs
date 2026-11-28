@@ -9,6 +9,7 @@ namespace Inventara.Application.Maintenance;
 
 public sealed class MaintenanceService(
     IMaintenanceRepository maintenances,
+    ILoanRepository loans,
     IEntityRepository<Asset> assets,
     IEntityRepository<Vendor> vendors,
     IValidator<MaintenanceListQuery> listQueryValidator,
@@ -42,6 +43,16 @@ public sealed class MaintenanceService(
         {
             var asset = await assets.GetByIdAsync(request.AssetId, token)
                 ?? throw new EntityNotFoundException("Asset not found.");
+            if (await loans.HasActiveLoanAsync(asset.Id, token))
+            {
+                throw new ConflictException("An asset with an active loan cannot be sent to maintenance.");
+            }
+
+            if (await maintenances.HasActiveTicketAsync(asset.Id, token))
+            {
+                throw new ConflictException("The asset already has an active maintenance ticket.");
+            }
+
             await EnsureVendorExistsAsync(request.VendorId, token);
 
             var reportedAt = DateTime.UtcNow;

@@ -6,6 +6,8 @@ namespace Inventara.Application.Persistence;
 
 public interface IMaintenanceRepository : IEntityRepository<MaintenanceEntity>
 {
+    Task<bool> HasActiveTicketAsync(Guid assetId, CancellationToken cancellationToken);
+
     Task<PagedResult<MaintenanceReadRecord>> GetPageAsync(
         MaintenanceFilter filter,
         int page,

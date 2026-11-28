@@ -56,6 +56,52 @@ public sealed class MaintenanceAndDashboardServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_AssetHasActiveLoan_ThrowsConflict()
+    {
+        var asset = new Asset { Status = AssetStatus.OnLoan };
+        var repository = new FakeMaintenanceRepository(assets: [asset]);
+        var service = CreateMaintenanceService(
+            repository,
+            [asset],
+            loans: new FakeLoanRepository(hasActiveLoan: true));
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateAsync(
+                Guid.NewGuid(),
+                new CreateMaintenanceRequest
+                {
+                    AssetId = asset.Id,
+                    Description = "Repair after inspection"
+                },
+                CancellationToken.None));
+
+        Assert.Empty(repository.Items);
+        Assert.Equal(AssetStatus.OnLoan, asset.Status);
+    }
+
+    [Fact]
+    public async Task CreateAsync_AssetHasActiveMaintenanceTicket_ThrowsConflict()
+    {
+        var asset = new Asset { Status = AssetStatus.Maintenance };
+        var activeTicket = CreateMaintenance(asset.Id);
+        var repository = new FakeMaintenanceRepository([activeTicket], [asset]);
+        var service = CreateMaintenanceService(repository, [asset]);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateAsync(
+                Guid.NewGuid(),
+                new CreateMaintenanceRequest
+                {
+                    AssetId = asset.Id,
+                    Description = "Duplicate maintenance"
+                },
+                CancellationToken.None));
+
+        Assert.Single(repository.Items);
+        Assert.Equal(AssetStatus.Maintenance, asset.Status);
+    }
+
+    [Fact]
     public async Task CreateAsync_EmptyDescription_FailsValidation()
     {
         var service = CreateMaintenanceService();
@@ -241,12 +287,14 @@ public sealed class MaintenanceAndDashboardServiceTests
         FakeMaintenanceRepository? repository = null,
         IEnumerable<Asset>? assets = null,
         IEnumerable<Maintenance>? maintenances = null,
+        FakeLoanRepository? loans = null,
         FakeTransactionManager? transactions = null)
     {
         var assetItems = assets?.ToList() ?? [];
         repository ??= new FakeMaintenanceRepository(maintenances, assetItems);
         return new MaintenanceService(
             repository,
+            loans ?? new FakeLoanRepository(),
             new FakeEntityRepository<Asset>(assetItems),
             new FakeEntityRepository<Vendor>(),
             new MaintenanceListQueryValidator(),
@@ -273,6 +321,12 @@ public sealed class MaintenanceAndDashboardServiceTests
         : FakeEntityRepository<Maintenance>(maintenances), IMaintenanceRepository
     {
         private readonly List<Asset> _assets = assets?.ToList() ?? [];
+
+        public Task<bool> HasActiveTicketAsync(Guid assetId, CancellationToken cancellationToken) =>
+            Task.FromResult(Items.Any(maintenance =>
+                maintenance.AssetId == assetId
+                && (maintenance.Status is MaintenanceStatus.Reported or MaintenanceStatus.InProgress)
+                && !maintenance.IsDeleted));
 
         public Task<PagedResult<MaintenanceReadRecord>> GetPageAsync(
             MaintenanceFilter filter,
@@ -317,6 +371,25 @@ public sealed class MaintenanceAndDashboardServiceTests
                 asset?.AssetCode ?? "INV-LAP-0001",
                 asset?.Name ?? "Laptop");
         }
+    }
+
+    private sealed class FakeLoanRepository(bool hasActiveLoan = false)
+        : FakeEntityRepository<Loan>(), ILoanRepository
+    {
+        public Task<bool> HasActiveLoanAsync(Guid assetId, CancellationToken cancellationToken) =>
+            Task.FromResult(hasActiveLoan);
+
+        public Task<PagedResult<LoanReadRecord>> GetPageAsync(
+            LoanFilter filter,
+            int page,
+            int pageSize,
+            string sortBy,
+            bool descending,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new PagedResult<LoanReadRecord>([], 0, 0, page, pageSize));
+
+        public Task<LoanReadRecord?> GetDetailsAsync(Guid id, CancellationToken cancellationToken) =>
+            Task.FromResult<LoanReadRecord?>(null);
     }
 
     private class FakeEntityRepository<TEntity>(IEnumerable<TEntity>? entities = null)
