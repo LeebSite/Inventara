@@ -40,6 +40,21 @@ public sealed class AssetServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_ValidAsset_AlwaysStartsAvailable()
+    {
+        var category = new Category { Name = "Laptop" };
+        var repository = new FakeAssetRepository();
+        var service = CreateService(repository, [category]);
+
+        await service.CreateAsync(
+            Guid.NewGuid(),
+            CreateRequest(category.Id),
+            CancellationToken.None);
+
+        Assert.Equal(AssetStatus.Available, Assert.Single(repository.Items).Status);
+    }
+
+    [Fact]
     public async Task GetPageAsync_FilteredQuery_ForwardsFiltersAndPagination()
     {
         var repository = new FakeAssetRepository();
@@ -110,6 +125,22 @@ public sealed class AssetServiceTests
 
         Assert.Equal("Updated name", asset.Name);
         Assert.Equal("INV-LAP-0001", result.AssetCode);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_StatusCannotBeChangedByRequest()
+    {
+        var asset = new Asset { AssetCode = "INV-LAP-0001", Status = AssetStatus.OnLoan };
+        var category = new Category();
+        var service = CreateService(new FakeAssetRepository([asset]), [category]);
+
+        await service.UpdateAsync(
+            asset.Id,
+            Guid.NewGuid(),
+            CreateUpdateRequest() with { CategoryId = category.Id },
+            CancellationToken.None);
+
+        Assert.Equal(AssetStatus.OnLoan, asset.Status);
     }
 
     [Fact]
@@ -218,8 +249,7 @@ public sealed class AssetServiceTests
             LocationId = AssetServiceTests.LocationId,
             PurchaseDate = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             PurchasePrice = 1000m,
-            Condition = AssetCondition.Good,
-            Status = AssetStatus.Available
+            Condition = AssetCondition.Good
         };
 
     private static UpdateAssetRequest CreateUpdateRequest() =>
@@ -230,8 +260,7 @@ public sealed class AssetServiceTests
             LocationId = LocationId,
             PurchaseDate = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             PurchasePrice = 900m,
-            Condition = AssetCondition.Good,
-            Status = AssetStatus.Available
+            Condition = AssetCondition.Good
         };
 
     private static AssetService CreateService(

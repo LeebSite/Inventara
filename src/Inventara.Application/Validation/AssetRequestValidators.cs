@@ -44,7 +44,6 @@ public sealed class CreateAssetRequestValidator : AbstractValidator<CreateAssetR
         RuleFor(request => request.SerialNumber).MaximumLength(200);
         RuleFor(request => request.PurchasePrice).GreaterThanOrEqualTo(0);
         RuleFor(request => request.Condition).IsInEnum();
-        RuleFor(request => request.Status).IsInEnum();
         RuleFor(request => request.Notes).MaximumLength(2000);
     }
 }
@@ -59,7 +58,6 @@ public sealed class UpdateAssetRequestValidator : AbstractValidator<UpdateAssetR
         RuleFor(request => request.SerialNumber).MaximumLength(200);
         RuleFor(request => request.PurchasePrice).GreaterThanOrEqualTo(0);
         RuleFor(request => request.Condition).IsInEnum();
-        RuleFor(request => request.Status).IsInEnum();
         RuleFor(request => request.Notes).MaximumLength(2000);
     }
 }

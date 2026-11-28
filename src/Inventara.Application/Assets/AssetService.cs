@@ -77,7 +77,7 @@ public sealed class AssetService(
                 PurchaseDate = request.PurchaseDate.UtcDateTime,
                 PurchasePrice = request.PurchasePrice,
                 Condition = request.Condition,
-                Status = request.Status,
+                Status = Inventara.Domain.Enums.AssetStatus.Available,
                 Notes = NormalizeOptional(request.Notes)
             };
 
@@ -123,7 +123,6 @@ public sealed class AssetService(
         asset.PurchaseDate = request.PurchaseDate.UtcDateTime;
         asset.PurchasePrice = request.PurchasePrice;
         asset.Condition = request.Condition;
-        asset.Status = request.Status;
         asset.Notes = NormalizeOptional(request.Notes);
 
         assets.Update(asset);

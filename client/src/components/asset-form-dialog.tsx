@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 import api, { getErrorMessage, unwrap } from "@/lib/api"
 import { toDateInput } from "@/lib/format"
-import type { ApiEnvelope, Asset, AssetCondition, AssetStatus, Category, Location, Page, Vendor } from "@/types"
+import type { ApiEnvelope, Asset, AssetCondition, Category, Location, Page, Vendor } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -17,7 +17,6 @@ interface AssetFormValues {
   purchaseDate: string
   purchasePrice: string
   condition: AssetCondition
-  status: AssetStatus
   notes: string
 }
 
@@ -30,7 +29,6 @@ const emptyValues: AssetFormValues = {
   purchaseDate: "",
   purchasePrice: "",
   condition: "Good",
-  status: "Available",
   notes: "",
 }
 
@@ -45,7 +43,6 @@ function toValues(asset?: Asset): AssetFormValues {
     purchaseDate: toDateInput(asset.purchaseDate),
     purchasePrice: String(asset.purchasePrice),
     condition: asset.condition,
-    status: asset.status,
     notes: asset.notes ?? "",
   }
 }
@@ -102,7 +99,6 @@ export function AssetFormDialog({
       purchaseDate: new Date(`${values.purchaseDate}T00:00:00Z`).toISOString(),
       purchasePrice: Number(values.purchasePrice),
       condition: values.condition,
-      status: values.status,
       notes: values.notes.trim() || null,
     }
 
@@ -162,14 +158,6 @@ export function AssetFormDialog({
                 <option value="Good">Baik</option>
                 <option value="MinorDamage">Kerusakan ringan</option>
                 <option value="MajorDamage">Kerusakan berat</option>
-              </select>
-            </FormField>
-            <FormField label="Status">
-              <select className="form-select" value={values.status} onChange={(event) => update("status", event.target.value as AssetStatus)}>
-                <option value="Available">Tersedia</option>
-                <option value="OnLoan">Dipinjam</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Retired">Pensiun</option>
               </select>
             </FormField>
           </div>

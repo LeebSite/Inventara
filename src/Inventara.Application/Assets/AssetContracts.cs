@@ -92,9 +92,6 @@ public sealed record CreateAssetRequest
     /// <summary>Current physical condition.</summary>
     public required AssetCondition Condition { get; init; }
 
-    /// <summary>Current asset status.</summary>
-    public required AssetStatus Status { get; init; }
-
     /// <summary>Optional notes.</summary>
     public string? Notes { get; init; }
 }
@@ -125,9 +122,6 @@ public sealed record UpdateAssetRequest
 
     /// <summary>Current physical condition.</summary>
     public required AssetCondition Condition { get; init; }
-
-    /// <summary>Current asset status.</summary>
-    public required AssetStatus Status { get; init; }
 
     /// <summary>Optional notes.</summary>
     public string? Notes { get; init; }
