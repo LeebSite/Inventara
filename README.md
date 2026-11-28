@@ -58,6 +58,7 @@ VITE_API_URL=http://localhost:5090/api/v1
 ```
 
 API mengizinkan CORS dari `http://localhost:5173`. Token akses disimpan di `localStorage`; route frontend membantu navigasi berdasarkan role, sementara otorisasi tetap ditegakkan API.
+Endpoint login membatasi lima percobaan per alamat IP dalam satu menit. Gunakan `POST /api/v1/auth/logout` untuk mencabut token aktif; perubahan password juga mencabut token lama.
 
 ## Kredensial demo
 

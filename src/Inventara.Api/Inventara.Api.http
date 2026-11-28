@@ -11,6 +11,7 @@
 @maintenanceId = {{createMaintenance.response.body.$.data.id}}
 
 ### Login with local admin credentials supplied by the REST Client environment
+# Login allows five failed/successful attempts per client IP per minute.
 # @name login
 POST {{baseUrl}}/api/v1/auth/login
 Content-Type: application/json
@@ -193,7 +194,6 @@ Content-Type: application/json
   "purchaseDate": "2026-01-15T00:00:00Z",
   "purchasePrice": 1500.00,
   "condition": "Good",
-  "status": "Available",
   "notes": "Example asset"
 }
 
@@ -215,7 +215,6 @@ Content-Type: application/json
   "purchaseDate": "2026-01-15T00:00:00Z",
   "purchasePrice": 1450.00,
   "condition": "MinorDamage",
-  "status": "Available",
   "notes": "Updated example asset"
 }
 
@@ -367,4 +366,8 @@ Authorization: Bearer {{token}}
 
 ### Soft-delete the example asset (Admin only)
 DELETE {{baseUrl}}/api/v1/assets/{{assetId}}
+Authorization: Bearer {{token}}
+
+### Logout and revoke all tokens for the current user
+POST {{baseUrl}}/api/v1/auth/logout
 Authorization: Bearer {{token}}
